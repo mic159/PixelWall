@@ -42,6 +42,11 @@ void loop() {
 }
 
 void handlePacket() {
+  if (Udp.available() < TPM2NET_HEADER_SIZE) {
+    Serial.println(F("Packet too small"));
+    return;
+  }
+
   //check header byte
   uint8_t header = Udp.read();
   if (header!=TPM2NET_HEADER_IDENT) {
@@ -57,7 +62,7 @@ void handlePacket() {
     Serial.println(cmd, HEX);
     return;
   }
-  
+
   uint16_t frameSize = Udp.read();
   frameSize = (frameSize << 8) + Udp.read();
 
@@ -67,7 +72,7 @@ void handlePacket() {
     Serial.println(F("No multi-panel"));
     return;
   }
-  
+
   // Some extra data (seems to be just 1)
   Udp.read();
 
@@ -93,10 +98,12 @@ void handlePacket() {
   }
 
   // Check footer
-  uint8_t footer = Udp.read();
-  if (footer != TPM2NET_FOOTER_IDENT) {
-    Serial.print(F("Invalid footer ident "));
-    Serial.println(footer, HEX);
+  if (Udp.available() > 0) {
+    uint8_t footer = Udp.read();
+    if (footer != TPM2NET_FOOTER_IDENT) {
+      Serial.print(F("Invalid footer ident "));
+      Serial.println(footer, HEX);
+    }
   }
 
   LEDS.show();
